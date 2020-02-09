@@ -15,7 +15,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 
 import GoalCard from "../components/GoalCard";
 
-import * as Calender from "expo-calendar";
+import * as Calendar from "expo-calendar";
 
 const goals = [
   {
@@ -39,11 +39,34 @@ const ProfileScreen = props => {
 
   useEffect(() => {
     (async () => {
+      Calendar.getDefaultCalendarAsync().then(item => console.log(item));
       const { status } = await Calendar.requestCalendarPermissionsAsync();
       if (status === "granted") {
         const calendars = await Calendar.getCalendarsAsync();
-        console.log("Here are all your calendars:");
-        console.log({ calendars });
+        const defaultCalendarSource =
+          Platform.OS === "ios"
+            ? await Calendar.getDefaultCalendarAsync()
+            : { isLocalAccount: true, name: "Expo Calender" };
+        console.log(defaultCalendarSource);
+        const newCalendarID = await Calendar.createCalendarAsync({
+          title: "Expo Calendar",
+          color: "purple",
+          entityType: Calendar.EntityTypes.EVENT,
+          sourceId: defaultCalendarSource.id,
+          source: defaultCalendarSource,
+          name: "internalCalendarName",
+          ownerAccount: "personal",
+          accessLevel: Calendar.CalendarAccessLevel.OWNER
+        });
+        // console.log(`Your new calendar ID is: ${newCalendarID}`);
+        // const calendarIDs = [];
+        // calendars.forEach(calendarItem => calendarIDs.push(calendarItem.id));
+
+        // Calendar.getEventsAsync(
+        //   calendarIDs,
+        //   new Date("2020-01-01T00:00:00"),
+        //   new Date("2020-02-02T00:00:00")
+        // ).then(ev => {});
       }
     })();
   }, []);
