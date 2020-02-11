@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useReducer } from "react";
 import {
   View,
   StyleSheet,
@@ -11,11 +11,10 @@ import {
   TouchableWithoutFeedback
 } from "react-native";
 
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 import Icon from "react-native-vector-icons/Ionicons";
 
 import GoalCard from "../components/GoalCard";
-
-import * as Calendar from "expo-calendar";
 
 const goals = [
   {
@@ -36,43 +35,14 @@ const ProfileScreen = props => {
   const [chosenGoalID, setChosenGoalID] = useState("");
   const [showReminderModal, setShowReminderModal] = useState("");
   const [showDueDateCalendar, setShowDueDateCalendarModal] = useState("");
-
-  useEffect(() => {
-    (async () => {
-      Calendar.getDefaultCalendarAsync().then(item => console.log(item));
-      const { status } = await Calendar.requestCalendarPermissionsAsync();
-      if (status === "granted") {
-        const calendars = await Calendar.getCalendarsAsync();
-        const defaultCalendarSource =
-          Platform.OS === "ios"
-            ? await Calendar.getDefaultCalendarAsync()
-            : { isLocalAccount: true, name: "Expo Calender" };
-        console.log(defaultCalendarSource);
-        const newCalendarID = await Calendar.createCalendarAsync({
-          title: "Expo Calendar",
-          color: "purple",
-          entityType: Calendar.EntityTypes.EVENT,
-          sourceId: defaultCalendarSource.id,
-          source: defaultCalendarSource,
-          name: "internalCalendarName",
-          ownerAccount: "personal",
-          accessLevel: Calendar.CalendarAccessLevel.OWNER
-        });
-        // console.log(`Your new calendar ID is: ${newCalendarID}`);
-        // const calendarIDs = [];
-        // calendars.forEach(calendarItem => calendarIDs.push(calendarItem.id));
-
-        // Calendar.getEventsAsync(
-        //   calendarIDs,
-        //   new Date("2020-01-01T00:00:00"),
-        //   new Date("2020-02-02T00:00:00")
-        // ).then(ev => {});
-      }
-    })();
-  }, []);
+  const [date, setDate] = useState(new Date(1598051730000));
+  const [mode, setMode] = useState("date");
+  const [show, setShow] = useState(false);
 
   const showModalHandler = itemID => {
+    setShow(false);
     setShowModal(showModal => !showModal);
+    setDatePickerVisibility(false);
     setChosenGoalID(itemID);
   };
 
@@ -84,6 +54,40 @@ const ProfileScreen = props => {
     setShowDueDateCalendarModal(showDueDateCalendar => !showDueDateCalendar);
   };
 
+  const onChange = (event, selectedDate) => {
+    const currentDate = selectedDate || date;
+
+    setDate(currentDate);
+    setShow(Platform.OS === "ios" ? true : false);
+  };
+
+  const showMode = currentMode => {
+    setShow(true);
+    setMode(currentMode);
+  };
+
+  const showDatepicker = () => {
+    showMode("datetime");
+  };
+
+  const showTimepicker = () => {
+    showMode("datetime");
+  };
+
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+
+  const showDatePicker = () => {
+    setDatePickerVisibility(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
+  };
+
+  const handleConfirm = date => {
+    hideDatePicker();
+  };
+
   return (
     <View style={styles.screen}>
       <TouchableWithoutFeedback onPress={showModalHandler}>
@@ -91,30 +95,39 @@ const ProfileScreen = props => {
           <View style={styles.modal}>
             <View style={styles.modalContainer}>
               <TouchableHighlight onPress={showModalHandler}>
-                <Text>Hide Modal</Text>
+                <Text style={styles.white}>Hide Modal</Text>
               </TouchableHighlight>
-              <Text>{chosenGoalID}</Text>
+              <Text style={styles.white}>{chosenGoalID}</Text>
               <View style={styles.reminderDueDateContainer}>
                 <TouchableWithoutFeedback onPress={showReminderModalHandler}>
                   <View style={styles.reminderDueDateItemContainer}>
-                    <Icon name="ios-timer" size={25} />
-                    <Text>Set Reminder</Text>
+                    <Icon name="ios-timer" size={25} color="#fff" />
+                    <Text style={styles.white}>Set Reminder</Text>
                   </View>
                 </TouchableWithoutFeedback>
-                <TouchableWithoutFeedback onPress={showDueDateCalendarHandler}>
+                <TouchableWithoutFeedback onPress={showDatePicker}>
                   <View style={styles.reminderDueDateItemContainer}>
-                    <Icon name="ios-calendar" size={25} />
-                    <Text>Set Due Date</Text>
+                    <Icon name="ios-calendar" size={25} color="#fff" />
+                    <Text style={styles.white}>Set Due Date</Text>
                   </View>
                 </TouchableWithoutFeedback>
               </View>
             </View>
           </View>
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={false}
-          ></Modal>
+          <DateTimePickerModal
+            testID="dateTimePicker"
+            timeZoneOffsetInMinutes={0}
+            value={date}
+            is24Hour={true}
+            display="default"
+            // onChange={onChange}
+            //style={{ backgroundColor: "grey" }}
+            isDarkModeEnabled={true}
+            isVisible={isDatePickerVisible}
+            mode="datetime"
+            onConfirm={handleConfirm}
+            onCancel={hideDatePicker}
+          />
         </Modal>
       </TouchableWithoutFeedback>
 
@@ -143,8 +156,10 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     height: "60%",
-    width: 330,
-    backgroundColor: "purple",
+    width: 355,
+    borderRadius: 10,
+    backgroundColor: "black",
+    //color: "white",
     // borderColor: "red",
     // borderWidth: 2,
     alignItems: "center",
@@ -154,11 +169,15 @@ const styles = StyleSheet.create({
   reminderDueDateContainer: {
     flexDirection: "row",
     width: "100%",
+
     justifyContent: "space-around"
   },
   reminderDueDateItemContainer: {
     alignItems: "center",
     justifyContent: "center"
+  },
+  white: {
+    color: "#fff"
   }
 });
 
